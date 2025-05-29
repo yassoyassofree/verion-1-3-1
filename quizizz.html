@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Copier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        pre {
+            background-color: #eef;
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<h1>quizizz Cheats Code</h1>
+<pre id="codeBlock">
+    // ==UserScript==
+// @name         Quizizz | - | - | Assistant
+// @namespace    http://tampermonkey.net/
+// @version      1.01
+// @description  Learns from your mistakes, does the quiz for you after (NO LONGER WORKING, WILL NOT BE FIXED).
+// @author       GSRHackZ
+// @match        https://quizizz.com/join/*
+// @icon         https://cf.quizizz.com/img/favicon/apple-touch-icon.png
+// @grant        none
+// @downloadURL https://update.greasyfork.org/scripts/457832/Quizizz%20%7C%20-%20%7C%20-%20%7C%20Assistant.user.js
+// @updateURL https://update.greasyfork.org/scripts/457832/Quizizz%20%7C%20-%20%7C%20-%20%7C%20Assistant.meta.js
+// ==/UserScript==
+
+let answers = [],miner=true;
+if(localStorage.getItem("answers")!==null){answers=JSON.parse(localStorage.getItem("answers"))};
+setInterval(()=>{
+    if(document.getElementsByClassName("primary-action-btn")[0]!==undefined){
+        document.getElementsByClassName("primary-action-btn")[0].click();
+    }
+    if(document.getElementsByClassName("primary-button")[0]!==undefined){
+        document.getElementsByClassName("primary-button")[0].click();
+    }
+    if(document.getElementsByClassName("resizeable question-text-color")[0]!==undefined){
+        let quest = document.getElementsByClassName("resizeable question-text-color")[0].innerText;
+        if(document.getElementsByClassName("options-grid")[0]!==undefined){
+            let choices = document.getElementsByClassName("options-grid")[0].children;
+            let uid=false;
+            if(document.getElementsByClassName("question-media")[0]!==undefined){
+                if(document.getElementsByClassName("question-media")[0].children[0].classList.contains("question-image")){
+                    uid = document.getElementsByClassName("question-media")[0].children[0].src.split("?")[0];
+                }
+            }
+            if(!answer(quest,choices,uid)){
+                for(let i=0;i<choices.length;i++){
+                    choices[i].children[0].children[0].addEventListener("click",()=>{
+                        setTimeout(()=>{
+                            if(getCorr(choices)!==true){
+                                let save = {"quest":quest,"answr":getCorr(choices),"uid":uid}
+                                if(!isKnown(save)){
+                                    answers.push(save);
+                                    localStorage.setItem("answers",JSON.stringify(answers));
+                                }
+                                if(document.getElementsByClassName("right-navigator")[0]!==undefined){
+                                    document.getElementsByClassName("right-navigator")[0].click();
+                                }
+                            }
+                        },250)
+                    })
+                }
+            }
+            if(miner){
+                setInterval(()=>{
+                    choices[Math.floor(Math.random()*choices.length)].children[0].children[0].click();
+                },250)
+            }
+        }
+    }
+    else{
+        if(document.getElementsByClassName("right-navigator")[0]!==undefined){
+            document.getElementsByClassName("right-navigator")[0].click();
+        }
+        if(document.getElementsByClassName("selectors-container")[0]!==undefined){
+            let redemQuests = document.getElementsByClassName("selectors-container")[0].children;
+            redemQuests[Math.floor(Math.random()*redemQuests.length)].click();
+        }
+    }
+},500)
+function isKnown(obj){
+    for(let i=0;i<answers.length;i++){
+        if(answers[i].quest==obj.quest&&answers[i].answr==obj.answr&&answers[i].uid==obj.uid){
+            return true;
+        }
+    }
+    return false;
+}
+function answer(quest,choices,uid){
+    for(let i=0;i<choices.length;i++){
+        if(isKnown({"quest":quest,"answr":choices[i].children[0].children[0].innerText,"uid":uid})){
+            choices[i].children[0].children[0].click();
+            return true;
+        }
+    }
+    return false;
+}
+function getCorr(arr){
+    let correct = false;
+    for(let i=0;i<arr.length;i++){
+        if(arr[i].classList.contains("is-correct")){
+            correct = arr[i].children[0].children[0].innerText;
+        }
+    }
+    return correct;
+}
+</pre>
+<button id="copyButton">Copy Code</button>
+
+<script>
+    document.getElementById('copyButton').addEventListener('click', function() {
+        const codeBlock = document.getElementById('codeBlock');
+        const range = document.createRange();
+        range.selectNode(codeBlock);
+        window.getSelection().removeAllRanges(); // Clear any current selections
+        window.getSelection().addRange(range); // Select the code block
+
+        try {
+            document.execCommand('copy'); // Copy the selected text
+            alert('Code copied to clipboard!');
+        } catch (err) {
+            console.error('Error while copying code: ', err);
+        }
+
+        window.getSelection().removeAllRanges(); // Deselect the text
+    });
+    // Add keyboard shortcut listener at the document level
+    document.addEventListener('keydown', function(event) {
+            // Check for Ctrl + B
+            if (event.ctrlKey && event.key.toLowerCase() === 'b') {
+                event.preventDefault(); // Prevent default browser behavior
+                window.location.href = 'https://classroom.google.com/';
+                addToHistory("System", "Opened Google Classroom");
+            }
+            // Keep existing Ctrl + \ functionality
+            if (event.ctrlKey && event.key === '\\') {
+                if (document.getElementById("adminHistoryContainer").style.display === "block") {
+                    document.getElementById("adminHistoryContainer").style.display = "none";
+                    addToHistory("Admin", "Closed admin powers");
+                    alert("Admin powers have been closed");
+                }
+            }
+        });
+</script>
+
+</body>
+</html>

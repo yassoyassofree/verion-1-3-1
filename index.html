@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>User Management System</title>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    font-family: 'Arial', sans-serif;
+    color: #fff;
+    text-align: center;
+}
+
+.container {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 400px;
+}
+
+.form-container {
+    display: none;
+    width: 100%;
+    max-width: 400px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #333;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: none;
+    border-radius: 5px;
+    background-color: #4facfe;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #00f2fe;
+}
+
+button.secondary {
+    background-color: #666;
+}
+
+button.secondary:hover {
+    background-color: #888;
+}
+
+h1, h2 {
+    margin-bottom: 20px;
+}
+
+/* Modal styles */
+.modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 800px;
+    width: 90%;
+    color: #000;
+}
+.modal table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.modal th, .modal td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+.modal th {
+    background-color: #f5f5f5;
+}
+.modal button {
+    margin: 5px;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #4facfe;
+    color: white;
+}
+.modal button:hover {
+    background-color: #00f2fe;
+}
+.modal button.reject {
+    background-color: #ff6b6b;
+}
+.modal button.reject:hover {
+    background-color: #ff5252;
+}
+
+/* Loading overlay styles */
+.loading-screen {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+.loading-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+.video-container {
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+    margin: 20px auto;
+}
+.video-container iframe {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+}
+</style>
+</head>
+<body>
+<!-- Login Form -->
+<div class="container" id="login-container">
+    <h2>Login</h2>
+    <form id="loginForm" onsubmit="return login(event);">
+        <input type="text" id="username" placeholder="Username" autocomplete="username" required>
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit">Login</button>
+        <button type="button" id="show-register-btn" class="secondary" onclick="showRegisterForm()">Create Account</button>
+    </form>
+</div>
+
+<!-- Registration Form -->
+<div class="form-container" id="register-container">
+    <h2>Create Account</h2>
+    <form id="registerForm" onsubmit="return registerUser();">
+        <input type="text" id="reg-username" placeholder="Username" autocomplete="off" required>
+        <input type="password" id="reg-password" placeholder="Password" autocomplete="new-password" required>
+        <input type="password" id="reg-confirm-password" placeholder="Confirm Password" autocomplete="new-password" required>
+        <input type="email" id="reg-email" placeholder="Email" autocomplete="email" required>
+        <button type="submit">Create Account</button>
+        <button type="button" class="secondary" onclick="showLoginForm();">Back to Login</button>
+    </form>
+</div>
+
+<!-- Scripts -->
+<script>
+emailjs.init("bDKkeR0UwSJkAeCwM");
+
+// Load users from localStorage
+let users = [];
+
+function loadUsers() {
+    try {
+        const savedUsers = localStorage.getItem('users');
+        if (savedUsers) {
+            users = JSON.parse(savedUsers);
+        } else {
+            // Default admin user
+            users = [
+                { 
+                    name: "admin",
+                    id: "1000",
+                    password: "admin123",
+                    blocked: false,
+                    role: "admin",
+                    status: "active"
+                }
+            ];
+            saveUsers();
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+        users = [
+            { 
+                name: "admin",
+                id: "1000",
+                password: "admin123",
+                blocked: false,
+                role: "admin",
+                status: "active"
+            }
+        ];
+        saveUsers();
+    }
+}
+
+function saveUsers() {
+    try {
+        localStorage.setItem('users', JSON.stringify(users));
+    } catch (error) {
+        console.error('Error saving users:', error);
+    }
+}
+
+// Show login form
+function showLoginForm() {
+    document.getElementById('login-container').style.display = 'block';
+    document.getElementById('register-container').style.display = 'none';
+}
+
+// Show registration form
+function showRegisterForm() {
+    document.getElementById('login-container').style.display = 'none';
+    document.getElementById('register-container').style.display = 'block';
+}
+
+// Initialize on load
+window.addEventListener('DOMContentLoaded', () => {
+    loadUsers();
+    // Default show login
+    showLoginForm();
+});
+
+// Toggle display on startup
+document.getElementById('show-register-btn').onclick = showRegisterForm;
+
+// Keyboard shortcuts
+window.addEventListener('keydown', (event) => {
+    if (event.ctrlKey && event.key === '=') {
+        event.preventDefault();
+        checkPendingApprovals();
+    } else if (event.ctrlKey && event.key.toLowerCase() === 'b') {
+        event.preventDefault();
+        window.location.href = 'https://classroom.google.com/';
+    } else if (event.ctrlKey && event.key === '\\') {
+        event.preventDefault();
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser) {
+            const user = users.find(u => u.name === currentUser);
+            if (user && user.role === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                alert('Access denied. Only administrators can access the admin panel.');
+            }
+        } else {
+            alert('Please login first to access the admin panel.');
+        }
+    } else if (event.ctrlKey && event.key === 'Enter') {
+        event.preventDefault();
+        // Show video overlay
+        showVideoOverlay();
+        // After login, redirect to welcome page if active
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser) {
+            const user = users.find(u => u.name === currentUser);
+            if (user && user.status === 'active') {
+                window.location.href = 'welcome.html';
+            } else {
+                alert('Please login first or wait for account approval.');
+            }
+        } else {
+            alert('Please login first or wait for account approval.');
+        }
+    }
+});
+
+function showVideoOverlay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'video-overlay';
+    overlay.innerHTML = `
+        <div class="video-container">
+            <iframe 
+                width="560" 
+                height="315" 
+                src="https://www.youtube.com/embed/uBBDMqZKagY?autoplay=1&mute=1" 
+                title="YouTube video player" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen
+            ></iframe>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.onclick = () => overlay.remove();
+}
+
+// Check pending approvals
+function checkPendingApprovals() {
+    const pendingUsers = users.filter(u => u.status === 'pending');
+    if (pendingUsers.length > 0) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Pending Approvals (${pendingUsers.length})</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Registration Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pending-users-tbody"></tbody>
+                </table>
+                <button onclick="this.closest('.modal').remove();">Close</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        const tbody = modal.querySelector('#pending-users-tbody');
+        pendingUsers.forEach(user => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${user.name}</td>
+                <td>${user.email}</td>
+                <td>${new Date(user.registrationDate).toLocaleString()}</td>
+                <td>
+                    <button onclick="approveUser('${user.id}')">Approve</button>
+                    <button onclick="rejectUser('${user.id}')">Reject</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } else {
+        alert('No pending approvals at this time.');
+    }
+}
+
+function approveUser(userId) {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+        user.status = 'active';
+        saveUsers();
+        alert(`User ${user.name} has been approved!`);
+        document.querySelector('.modal')?.remove();
+        checkPendingApprovals();
+    }
+}
+
+function rejectUser(userId) {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+        user.status = 'rejected';
+        user.blocked = true;
+        saveUsers();
+        alert(`User ${user.name} has been rejected and blocked.`);
+        document.querySelector('.modal')?.remove();
+        checkPendingApprovals();
+    }
+}
+
+// Registration
+async function registerUser() {
+    const username = document.getElementById('reg-username').value.trim();
+    const password = document.getElementById('reg-password').value.trim();
+    const confirmPassword = document.getElementById('reg-confirm-password').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+
+    if (!username || !password || !confirmPassword || !email) {
+        alert("Please fill in all fields.");
+        return false;
+    }
+    if (password !== confirmPassword) {
+        alert("Passwords do not match.");
+        return false;
+    }
+    if (password.length < 6) {
+        alert("Password must be at least 6 characters long.");
+        return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert("Please enter a valid email address.");
+        return false;
+    }
+    if (users.some(u => u.name.toLowerCase() === username.toLowerCase())) {
+        alert("Username already exists. Please choose another.");
+        return false;
+    }
+
+    // Show loading screen with video
+    const loadingScreen = document.createElement('div');
+    loadingScreen.className = 'loading-screen';
+    loadingScreen.innerHTML = `
+        <div class="loading-content">
+            <div class="video-container">
+                <iframe 
+                    width="560" 
+                    height="315" 
+                    src="https://www.youtube.com/embed/uBBDMqZKagY?autoplay=1&mute=1" 
+                    title="YouTube video player" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen
+                ></iframe>
+            </div>
+            <p>Creating your account...</p>
+        </div>
+    `;
+    document.body.appendChild(loadingScreen);
+
+    // Generate unique ID
+    let userId;
+    do {
+        userId = Math.floor(Math.random() * 9000 + 1000).toString();
+    } while (users.some(u => u.id === userId));
+
+    const newUser = {
+        name: username,
+        id: userId,
+        password: password,
+        email: email,
+        blocked: false,
+        role: "user",
+        registrationDate: new Date().toISOString(),
+        status: "pending",
+        registrationData: {
+            username: username,
+            email: email,
+            registrationDate: new Date().toISOString(),
+            lastAttempt: new Date().toISOString()
+        }
+    };
+
+    // Save registration data to localStorage
+    localStorage.setItem('registrationData', JSON.stringify(newUser.registrationData));
+
+    users.push(newUser);
+    saveUsers();
+
+    // Send email
+    try {
+        await emailjs.send("service_4x8w1qg", "template_4k8v9qg", {
+            to_email: email,
+            to_name: username,
+            message: `Welcome ${username}! Your account has been created successfully.\n\nYour user ID: ${userId}`
+        });
+    } catch (error) {
+        console.error('Email error:', error);
+    }
+
+    // Remove loading
+    loadingScreen.remove();
+
+    alert("Registration successful! Your account is pending approval.\n\nYour account information has been saved for future reference.");
+    showLoginForm();
+    return false;
+}
+
+// Login
+function login(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    if (!username || !password) {
+        alert("Please enter both username and password.");
+        return false;
+    }
+
+    const user = users.find(u => u.name.toLowerCase() === username.toLowerCase());
+    if (!user) {
+        alert("User not found. Please register first.");
+        showRegisterForm();
+        return false;
+    }
+
+    if (user.password !== password) {
+        alert("Incorrect password.");
+        return false;
+    }
+
+    if (user.blocked) {
+        alert("Your account is currently blocked. Please contact an administrator.");
+        return false;
+    }
+
+    if (user.status !== 'active') {
+        alert("Your account is pending approval. Please wait for an administrator to approve your account.");
+        return false;
+    }
+
+    localStorage.setItem('currentUser', user.name);
+    localStorage.setItem('currentUserId', user.id);
+    window.location.href = 'welcome.html';
+    return true;
+}
+
+// On DOM loaded
+</script>
+</body>
+</html>

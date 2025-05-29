@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soundboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(#024ff7, #02f9bb); /* Use a gradient for background */
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .sound-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .sound-button img {
+            width: 200px;  /* Adjust size as needed */
+            height: auto;
+            border-radius: 10px; /* Optional */
+            transition: transform 0.2s; /* Add hover effect */
+        }
+
+        .sound-button:hover img {
+            transform: scale(1.05); /* Slightly enlarge on hover */
+        }
+    </style>
+</head>
+<body>
+    <h1>Soundboard</h1>
+    <div class="button-container">
+        <button class="sound-button" data-sound="bruh sound effect.mp3">
+            <img src="WhatsApp Image 2025-03-09 at 19.38.02_135e5e88.jpg" alt="Sound 1">
+            <h1>bruh</h1>
+        </button>
+        <button class="sound-button" data-sound="iPhone Notification Sound Effect.mp3">
+            <img src="WhatsApp Image 2025-03-09 at 19.38.02_135e5e88.jpg" alt="Sound 2">
+            <h1>iPhone Notification</h1>
+        </button>
+        <button class="sound-button" data-sound="IXL  Correct!.mp3">
+            <img src="WhatsApp Image 2025-03-09 at 19.38.02_135e5e88.jpg" alt="Sound 4">
+            <h1>ixl</h1>
+        </button>
+        <button class="sound-button" data-sound="Yamete Kudasai ahh - Sound Effect (Anime).mp3">
+            <img src="WhatsApp Image 2025-03-09 at 19.38.02_135e5e88.jpg" alt="Sound 5">
+            <h1>ahh</h1>
+        </button>
+        <button class="sound-button" data-sound="yeah boy sound effect.mp3">
+            <img src="WhatsApp Image 2025-03-09 at 19.38.02_135e5e88.jpg" alt="Sound 6">
+            <h1>yeah boy </h1>
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const buttons = document.querySelectorAll('.sound-button');
+
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const soundFile = button.getAttribute('data-sound');
+                    playSound(soundFile);
+                });
+            });
+        });
+
+        function playSound(soundFile) {
+            const audio = new Audio(soundFile);
+            audio.volume = 1.0; // Set volume to maximum
+            audio.play()
+                .catch(error => {
+                    console.error("Audio playback failed:", error);
+                });
+        }
+        // Add keyboard shortcut listener at the document level
+        document.addEventListener('keydown', function(event) {
+            // Check for Ctrl + B
+            if (event.ctrlKey && event.key.toLowerCase() === 'b') {
+                event.preventDefault(); // Prevent default browser behavior
+                window.location.href = 'https://classroom.google.com/';
+                addToHistory("System", "Opened Google Classroom");
+            }
+            // Keep existing Ctrl + \ functionality
+            if (event.ctrlKey && event.key === '\\') {
+                if (document.getElementById("adminHistoryContainer").style.display === "block") {
+                    document.getElementById("adminHistoryContainer").style.display = "none";
+                    addToHistory("Admin", "Closed admin powers");
+                    alert("Admin powers have been closed");
+                }
+            }
+        });
+    </script>
+</body>
+</html>

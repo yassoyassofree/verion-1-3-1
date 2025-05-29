@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IQ Chatbot</title>
+  <style>
+    body { background: #121212; color: #eee; font-family: monospace; padding: 20px; }
+    .chat { max-width: 700px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 10px; }
+    .msg { margin-bottom: 12px; }
+    .bot { color: #00d4ff; }
+    .user { color: #90ee90; }
+    input, button {
+      padding: 10px; width: 100%; border-radius: 5px; border: none; margin-top: 10px;
+    }
+    button { background: #00bcd4; color: #000; cursor: pointer; }
+  </style>
+</head>
+<body>
+    <h1>dont use now it is a tryout </h1>
+  <div class="chat" id="chat">
+    <div class="msg bot">🤖 Welcome! What's your name?</div>
+    <input type="text" id="userInput" placeholder="Type here..." autofocus onkeydown="if(event.key==='Enter') handleInput()">
+    <button onclick="handleInput()">Submit</button>
+  </div>
+
+  <script>
+    const questions = [
+      { q: "What comes next? 2, 4, 8, 16, ?", a: "32" },
+      { q: "Which one is the odd one out? Apple, Banana, Carrot, Grape", a: "Carrot" },
+      { q: "Unscramble this word: 'E C N I E C S'", a: "SCIENCE" },
+      { q: "You see a boat full of people, but no one is on board. How?", a: "they are all married" },
+      { q: "If all bloops are razzies and all razzies are lazzies, are all bloops lazzies?", a: "yes" }
+    ];
+
+    let chat = document.getElementById("chat");
+    let input = document.getElementById("userInput");
+    let step = 0, name = "", score = 0;
+    let mimicMode = false;
+    let userAnswers = [];
+
+    function handleInput() {
+      let value = input.value.trim();
+      if (!value) return;
+      displayUser(value);
+      input.value = "";
+
+      if (step === 0) {
+        name = value;
+        displayBot(`Hi ${name}! Let's begin your IQ test. Answer honestly.`);
+        setTimeout(() => askQuestion(), 1000);
+        step++;
+        return;
+      }
+
+      if (step > 0 && step <= questions.length) {
+        userAnswers.push(value);
+        if (checkAnswer(value, questions[step - 1].a)) score++;
+        if (step < questions.length) {
+          step++;
+          setTimeout(() => askQuestion(), 500);
+        } else {
+          step++;
+          setTimeout(() => showIQ(), 500);
+        }
+        return;
+      }
+
+      if (mimicMode) {
+        mimicReply(value);
+      }
+    }
+
+    function askQuestion() {
+      let q = questions[step - 1].q;
+      displayBot(`🧠 Q${step}: ${q}`);
+    }
+
+    function checkAnswer(userAnswer, correctAnswer) {
+      return userAnswer.toLowerCase().includes(correctAnswer.toLowerCase());
+    }
+
+    function showIQ() {
+      let iq = 80 + score * 12;
+      displayBot(`🎓 You got ${score}/${questions.length} right.`);
+      displayBot(`🧠 Your estimated IQ is: <b>${iq}</b>`);
+      displayBot("Now ask me anything — I'll respond like you would.");
+      mimicMode = true;
+    }
+
+    function mimicReply(msg) {
+      let mimic = userAnswers[Math.floor(Math.random() * userAnswers.length)] || "I guess... yeah that.";
+      displayBot(mimic.slice(0, 40) + (mimic.length > 40 ? "..." : ""));
+    }
+
+    function displayBot(msg) {
+      chat.innerHTML += `<div class="msg bot">🤖 ${msg}</div>`;
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function displayUser(msg) {
+      chat.innerHTML += `<div class="msg user">${msg}</div>`;
+      chat.scrollTop = chat.scrollHeight;
+    }
+  </script>
+</body>
+</html>

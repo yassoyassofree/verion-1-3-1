@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .welcome-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    
+
+    <h1>Welcome! Please choose what you want!</h1>
+    <button class="redirect-button" onclick="window.location.href='Cheats.html'">Cheats</button>
+    <button class="redirect-button" onclick="window.location.href='unblockers.html'">Unblockers</button>
+    <button class="redirect-button" onclick="window.location.href='sound board.html'">Sound Board</button>
+    <button class="redirect-button" onclick="window.location.href='chat.html'">chat</button>
+
+    <script>
+        // Add keyboard shortcut listener at the document level
+        document.addEventListener('keydown', function(event) {
+            // Check for Ctrl + B
+            if (event.ctrlKey && event.key.toLowerCase() === 'b') {
+                event.preventDefault(); // Prevent default browser behavior
+                window.location.href = 'https://classroom.google.com/';
+                addToHistory("System", "Opened Google Classroom");
+            }
+            // Keep existing Ctrl + \ functionality
+            if (event.ctrlKey && event.key === '\\') {
+                if (document.getElementById("adminHistoryContainer").style.display === "block") {
+                    document.getElementById("adminHistoryContainer").style.display = "none";
+                    addToHistory("Admin", "Closed admin powers");
+                    alert("Admin powers have been closed");
+                }
+            }
+        });
+        // Function to toggle settings - currently just an alert
+        function toggleSettings() {
+            alert("Settings functionality to be implemented.");
+        }
+
+        // Function to load the selected profile picture
+        function loadProfilePicture(event) {
+            const profilePicture = document.getElementById('profilePicture');
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                profilePicture.src = e.target.result; // Load selected picture
+                localStorage.setItem('profilePicture', e.target.result); // Save image in localStorage
+            };
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Function to load user data from localStorage
+        function loadUserData() {
+            const storedName = localStorage.getItem('userName');
+            const storedPicture = localStorage.getItem('profilePicture');
+
+            // If no user name exists, prompt for a new account name
+            if (!storedName) {
+                const newName = prompt("Welcome, it seems you are a new user! Please enter your name:", "New Account");
+                if (newName) {
+                    localStorage.setItem('userName', newName);
+                    document.getElementById('userNameDisplay').innerText = newName; // Set display name
+                } else {
+                    document.getElementById('userNameDisplay').innerText = "Unnamed User"; // Fallback if no name is provided
+                }
+            } else {
+                // Set user name and profile picture if stored
+                document.getElementById('userNameDisplay').innerText = storedName;
+            }
+
+            if (storedPicture) {
+                document.getElementById('profilePicture').src = storedPicture;
+            }
+        }
+
+        // Call loadUserData when the page loads
+        window.onload = function() {
+            loadUserData(); // Attempt to load user data on page load
+        };
+
+        let currentUser = localStorage.getItem('currentUser') || 'Guest';
+        let currentUserEmail = localStorage.getItem('userEmail') || '';
+        
+        // List of allowed users (case-insensitive)
+        const allowedUsers = [
+            // From index.html
+            'malek ahmed',
+            'adham hazem rabei',
+            'ahmed mohamed',
+            'yaamen mostafa',
+            'ahmed salaheddin',
+            'hassan waleed',
+            // First names only
+            'malek',
+            'adham',
+            'ahmed',
+            'yaamen',
+            'hassan'
+        ];
+
+        // List of restricted users (case-insensitive)
+        const restrictedUsers = [
+            'eyad',
+            'abdelrahman',
+            'ahmed',
+            'farouk'
+        ];
+
+        // Check if current user is restricted
+        function isRestrictedUser() {
+            const currentUserLower = currentUser.toLowerCase();
+            return restrictedUsers.some(name => 
+                currentUserLower.includes(name.toLowerCase())
+            );
+        }
+
+        // Initialize welcome page
+        function initializeWelcome() {
+            // Check for Google account and get user info
+            if (checkGoogleAccount()) {
+                if (!getUserInfo()) {
+                    alert("Please provide your information to continue.");
+                    return;
+                }
+            }
+
+            // For restricted users, only show limited options
+            if (isRestrictedUser()) {
+                // Hide restricted buttons
+                const chatButton = document.querySelector('button[onclick*="chat.html"]');
+                const unblockersButton = document.querySelector('button[onclick*="unblockers.html"]');
+                if (chatButton) chatButton.style.display = 'none';
+                if (unblockersButton) unblockersButton.style.display = 'none';
+                
+                // Show limited access message
+                const message = document.createElement('div');
+                message.className = 'limited-access-message';
+                message.innerHTML = `
+                    <p>You have limited access to the website. You can only use the Cheats and Sound Board features.</p>
+                `;
+                document.querySelector('.container').appendChild(message);
+            }
+        }
+
+        // Add click handlers for buttons
+        document.querySelectorAll('.redirect-button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (isRestrictedUser()) {
+                    const href = this.getAttribute('onclick').match(/'([^']+)'/)[1];
+                    if (href === 'chat.html' || href === 'unblockers.html') {
+                        e.preventDefault();
+                        alert("You do not have access to this feature.");
+                    }
+                }
+            });
+        });
+
+        // Initialize when page loads
+        window.addEventListener('load', initializeWelcome);
+    </script>
+</body>
+</html>

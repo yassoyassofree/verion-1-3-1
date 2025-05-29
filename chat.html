@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Chat</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            margin: 20px auto;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+            transition: margin-right 0.3s ease;
+        }
+
+        .chat-container.settings-open {
+            margin-right: 300px;
+        }
+
+        .chat-header {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .back-button {
+            background: #4facfe;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .message.sent {
+            background: #4facfe;
+            align-self: flex-end;
+            border-radius: 15px 15px 0 15px;
+        }
+
+        .message.received {
+            background: #333;
+            align-self: flex-start;
+            border-radius: 15px 15px 15px 0;
+        }
+
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #4facfe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .profile-pic img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .profile-pic-large {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #4facfe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 36px;
+            cursor: pointer;
+            margin: 20px auto;
+            position: relative;
+        }
+
+        .profile-pic-large img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-info {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .private-message {
+            background: rgba(79, 172, 254, 0.2);
+            border-left: 3px solid #4facfe;
+            padding-left: 5px;
+        }
+
+        .chat-input {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+
+        .chat-input input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .chat-input button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 20px;
+            background: #4facfe;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .chat-input button:hover {
+            background: #3a8fd4;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+        }
+
+        .online-users {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 200px;
+        }
+
+        .online-users h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .user-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .user-list li {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+            position: relative;
+        }
+
+        .user-list li:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-name {
+            font-weight: bold;
+        }
+
+        .context-menu {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 10px;
+            padding: 10px;
+            min-width: 200px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: none;
+        }
+
+        .context-menu-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .context-menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 5px;
+        }
+
+        .user-info-title {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .user-info-value {
+            font-weight: bold;
+        }
+
+        .settings-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+
+        .settings-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .settings-panel {
+            position: absolute;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 20px;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            visibility: hidden;
+            opacity: 0;
+        }
+
+        .settings-panel.active {
+            right: 0;
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .settings-header h3 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+
+        .close-settings {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .settings-section {
+            margin-bottom: 20px;
+        }
+
+        .settings-section h4 {
+            margin: 0 0 10px 0;
+            font-size: 1em;
+            color: #4facfe;
+        }
+
+        .settings-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+
+        .settings-option label {
+            flex: 1;
+        }
+
+        .settings-option button {
+            background: #4facfe;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .settings-option button:hover {
+            background: #3a8fd4;
+        }
+
+        .settings-option select {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .user-profile.blocked {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .blocked-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            margin-left: 8px;
+        }
+
+        .blocked-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification-content button {
+            background: white;
+            color: #ff6b6b;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .notification-content button:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <button class="settings-button" onclick="toggleSettings()">⚙️</button>
+        
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-header">
+                <h3>Settings</h3>
+                <button class="close-settings" onclick="toggleSettings()">×</button>
+            </div>
+            
+            <div class="settings-section">
+                <h4>Chat Settings</h4>
+                <div class="settings-option">
+                    <label>Message Sound</label>
+                    <select id="messageSound" onchange="updateMessageSound()">
+                        <option value="on">On</option>
+                        <option value="off">Off</option>
+                    </select>
+                </div>
+                <div class="settings-option">
+                    <label>Message Preview</label>
+                    <select id="messagePreview" onchange="updateMessagePreview()">
+                        <option value="on">On</option>
+                        <option value="off">Off</option>
+                    </select>
+                </div>
+                <div class="settings-option">
+                    <label>Reset All Messages</label>
+                    <button onclick="resetAllMessages()">Reset</button>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h4>Appearance</h4>
+                <div class="settings-option">
+                    <label>Theme</label>
+                    <select id="themeSelect" onchange="updateTheme()">
+                        <option value="default">Default</option>
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+                <div class="settings-option">
+                    <label>Font Size</label>
+                    <select id="fontSize" onchange="updateFontSize()">
+                        <option value="small">Small</option>
+                        <option value="medium">Medium</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-header">
+            <h2>Global Chat</h2>
+            <button class="back-button" onclick="window.location.href='welcome.html'">Back to Home</button>
+        </div>
+        
+        <div class="profile-pic-large" id="profilePicLarge" oncontextmenu="handleProfilePicChange(event)">
+            <!-- Profile picture will appear here -->
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will appear here -->
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            Someone is typing...
+        </div>
+
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <div class="online-users">
+        <h3>Online Users</h3>
+        <ul class="user-list" id="onlineUsersList">
+            <!-- Online users will appear here -->
+        </ul>
+    </div>
+
+    <script>
+        let currentUser = localStorage.getItem('currentUser') || 'Guest';
+        let currentUserEmail = localStorage.getItem('userEmail') || '';
+        let messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+        let onlineUsers = new Set();
+        let lastMessageCount = 0;
+        const POLL_INTERVAL = 2000;
+        let selectedUser = null;
+        let messageSound = new Audio('http://freesound.org/people/elmasmalo1/sounds/377017/');
+        let blockedUsers = JSON.parse(localStorage.getItem('blockedUsers')) || [];
+
+        // Check for Google account
+        function checkGoogleAccount() {
+            // Check if user is logged into Google
+            if (window.location.href.includes('accounts.google.com')) {
+                return true;
+            }
+            return false;
+        }
+
+        // Get user's first letter for profile pic
+        function getProfileLetter(name) {
+            return name.charAt(0).toUpperCase();
+        }
+
+        // Get random color for profile pic
+        function getRandomColor() {
+            const colors = ['#4facfe', '#00f2fe', '#ff6b6b', '#51cf66', '#fcc419'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Get user information
+        function getUserInfo() {
+            const storedEmail = localStorage.getItem('userEmail');
+            const storedName = localStorage.getItem('userName');
+
+            if (!storedEmail || !storedName) {
+                const email = prompt("Please enter your email address:");
+                if (email) {
+                    const name = prompt("Please enter your name:");
+                    if (name) {
+                        localStorage.setItem('userEmail', email);
+                        localStorage.setItem('userName', name);
+                        currentUser = name;
+                        currentUserEmail = email;
+                        localStorage.setItem('currentUser', name);
+                        return true;
+                    }
+                }
+                return false;
+            } else {
+                currentUser = storedName;
+                currentUserEmail = storedEmail;
+                return true;
+            }
+        }
+
+        // Handle profile picture change
+        function handleProfilePicChange(event) {
+            event.preventDefault();
+            
+            // Create context menu for profile picture options
+            const contextMenu = document.createElement('div');
+            contextMenu.className = 'context-menu';
+            contextMenu.style.position = 'absolute';
+            contextMenu.style.left = `${event.clientX}px`;
+            contextMenu.style.top = `${event.clientY}px`;
+            
+            contextMenu.innerHTML = `
+                <div class="context-menu-item" onclick="changeProfilePicture()">Change Picture</div>
+                <div class="context-menu-item" onclick="resetProfilePicture()">Reset Picture</div>
+            `;
+            
+            document.body.appendChild(contextMenu);
+            
+            // Remove context menu when clicking elsewhere
+            const removeMenu = () => {
+                document.body.removeChild(contextMenu);
+                document.removeEventListener('click', removeMenu);
+            };
+            
+            setTimeout(() => {
+                document.addEventListener('click', removeMenu);
+            }, 0);
+        }
+
+        // Change profile picture
+        function changeProfilePicture() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const profilePic = document.getElementById('profilePicLarge');
+                        profilePic.innerHTML = `<img src="${e.target.result}" alt="Profile Picture">`;
+                        
+                        // Store profile picture with user's name as key
+                        localStorage.setItem(`profilePic_${currentUser}`, e.target.result);
+                        
+                        // Update all messages with the new profile picture
+                        updateAllMessages();
+                        
+                        // Force update for other users
+                        const updateEvent = new CustomEvent('profilePicUpdate', {
+                            detail: { user: currentUser, picture: e.target.result }
+                        });
+                        window.dispatchEvent(updateEvent);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            input.click();
+        }
+
+        // Reset profile picture
+        function resetProfilePicture() {
+            // Remove the profile picture from localStorage
+            localStorage.removeItem(`profilePic_${currentUser}`);
+            
+            // Update the large profile picture
+            const profilePic = document.getElementById('profilePicLarge');
+            const profileLetter = getProfileLetter(currentUser);
+            const profileColor = getRandomColor();
+            profilePic.innerHTML = `<span style="color: white">${profileLetter}</span>`;
+            profilePic.style.background = profileColor;
+            
+            // Update all messages
+            updateAllMessages();
+            
+            // Force update for other users
+            const updateEvent = new CustomEvent('profilePicUpdate', {
+                detail: { user: currentUser, picture: null }
+            });
+            window.dispatchEvent(updateEvent);
+        }
+
+        // Reset all profile pictures
+        function resetAllProfilePictures() {
+            // Get all keys from localStorage
+            const keys = Object.keys(localStorage);
+            
+            // Remove all profile pictures
+            keys.forEach(key => {
+                if (key.startsWith('profilePic_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            // Update the current user's profile picture
+            const profilePic = document.getElementById('profilePicLarge');
+            const profileLetter = getProfileLetter(currentUser);
+            const profileColor = getRandomColor();
+            profilePic.innerHTML = `<span style="color: white">${profileLetter}</span>`;
+            profilePic.style.background = profileColor;
+            
+            // Update all messages and online users
+            updateAllMessages();
+            updateOnlineUsers();
+            
+            // Force update for other users
+            const updateEvent = new CustomEvent('profilePicUpdate', {
+                detail: { user: 'all', picture: null }
+            });
+            window.dispatchEvent(updateEvent);
+        }
+
+        // Initialize chat
+        function initializeChat() {
+            // Load settings
+            loadSettings();
+            
+            // Check for Google account and get user info
+            if (checkGoogleAccount()) {
+                if (!getUserInfo()) {
+                    alert("Please provide your information to continue.");
+                    return;
+                }
+            }
+
+            // Add current user to online users
+            onlineUsers.add(currentUser);
+            updateOnlineUsers();
+
+            // Set initial profile picture
+            const profilePic = document.getElementById('profilePicLarge');
+            const savedPic = localStorage.getItem(`profilePic_${currentUser}`);
+            const profileLetter = getProfileLetter(currentUser);
+            const profileColor = getRandomColor();
+            
+            profilePic.innerHTML = savedPic ? 
+                `<img src="${savedPic}" alt="Profile Picture">` : 
+                `<span style="color: white">${profileLetter}</span>`;
+            profilePic.style.background = profileColor;
+
+            // Load previous messages
+            messages.forEach(message => {
+                addMessageToChat(message.user, message.text, message.timestamp);
+            });
+
+            // Set up message input
+            const messageInput = document.getElementById('messageInput');
+            messageInput.focus();
+
+            // Start polling for new messages
+            startMessagePolling();
+        }
+
+        // Start polling for new messages
+        function startMessagePolling() {
+            setInterval(checkForNewMessages, POLL_INTERVAL);
+        }
+
+        // Check for new messages
+        function checkForNewMessages() {
+            const storedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+            if (storedMessages.length > lastMessageCount) {
+                // New messages found
+                const newMessages = storedMessages.slice(lastMessageCount);
+                newMessages.forEach(message => {
+                    if (!messages.some(m => m.timestamp === message.timestamp)) {
+                        addMessageToChat(message.user, message.text, message.timestamp, message.isPrivate, message.recipient);
+                        messages.push(message);
+                        
+                        // Play sound if enabled and message is not from current user
+                        if (localStorage.getItem('messageSound') !== 'off' && 
+                            message.user !== currentUser && 
+                            !message.soundPlayed) {
+                            
+                            // Mark the message as sound played
+                            message.soundPlayed = true;
+                            localStorage.setItem('chatMessages', JSON.stringify(messages));
+                            
+                            // Play the sound
+                            messageSound.currentTime = 0;
+                            messageSound.play().catch(error => {
+                                console.log('Sound playback failed:', error);
+                            });
+                        }
+                    }
+                });
+                lastMessageCount = storedMessages.length;
+            }
+        }
+
+        // Add message to chat display
+        function addMessageToChat(user, text, timestamp, isPrivate = false, recipient = null) {
+            // Skip if message is from a blocked user or to a blocked user
+            if (isUserBlocked(user) || (isPrivate && isUserBlocked(recipient))) {
+                return;
+            }
+
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${user === currentUser ? 'sent' : 'received'} ${isPrivate ? 'private-message' : ''}`;
+            
+            const savedPic = localStorage.getItem(`profilePic_${user}`);
+            const profileLetter = getProfileLetter(user);
+            const profileColor = getRandomColor();
+            
+            messageDiv.innerHTML = `
+                <div class="profile-pic" style="background: ${profileColor}">
+                    ${savedPic ? `<img src="${savedPic}" alt="Profile Picture">` : profileLetter}
+                </div>
+                <div class="message-content">
+                    <div class="message-info">
+                        <span class="user-name">${user}</span>
+                        ${isPrivate ? `<span style="color: #4facfe">@${recipient}</span>` : ''}
+                        <span>• ${timestamp}</span>
+                    </div>
+                    <div class="message-text">${text}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Send message
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                const timestamp = new Date().toLocaleTimeString();
+                let isPrivate = false;
+                let recipient = null;
+
+                // Check for private message
+                if (message.startsWith('@')) {
+                    const parts = message.split(' ');
+                    if (parts.length > 1) {
+                        recipient = parts[0].substring(1);
+                        const privateMessage = parts.slice(1).join(' ');
+                        isPrivate = true;
+                        
+                        const messageData = {
+                            user: currentUser,
+                            text: privateMessage,
+                            timestamp: timestamp,
+                            isPrivate: true,
+                            recipient: recipient,
+                            soundPlayed: false // Add flag to track if sound was played
+                        };
+
+                        messages.push(messageData);
+                        localStorage.setItem('chatMessages', JSON.stringify(messages));
+                        lastMessageCount = messages.length;
+                        addMessageToChat(currentUser, privateMessage, timestamp, true, recipient);
+                    }
+                } else {
+                    const messageData = {
+                        user: currentUser,
+                        text: message,
+                        timestamp: timestamp,
+                        soundPlayed: false // Add flag to track if sound was played
+                    };
+
+                    messages.push(messageData);
+                    localStorage.setItem('chatMessages', JSON.stringify(messages));
+                    lastMessageCount = messages.length;
+                    addMessageToChat(currentUser, message, timestamp);
+                }
+
+                input.value = '';
+                showTypingIndicator();
+            }
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.style.display = 'block';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 2000);
+        }
+
+        // Handle Enter key press
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Handle right-click on user
+        function showContextMenu(event, user, email) {
+            event.preventDefault();
+            const contextMenu = document.getElementById('contextMenu');
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = `${event.clientX}px`;
+            contextMenu.style.top = `${event.clientY}px`;
+            
+            document.getElementById('contextUserName').textContent = user;
+            document.getElementById('contextUserEmail').textContent = email;
+            
+            // Store selected user for private chat
+            selectedUser = user;
+        }
+
+        // Close context menu when clicking elsewhere
+        document.addEventListener('click', () => {
+            const contextMenu = document.getElementById('contextMenu');
+            contextMenu.style.display = 'none';
+        });
+
+        // Start private chat with selected user
+        function startPrivateChat() {
+            const input = document.getElementById('messageInput');
+            input.value = `@${selectedUser} `;
+            input.focus();
+            document.getElementById('contextMenu').style.display = 'none';
+        }
+
+        // Update online users list
+        function updateOnlineUsers() {
+            const userList = document.getElementById('onlineUsersList');
+            userList.innerHTML = '';
+            
+            onlineUsers.forEach(user => {
+                const li = document.createElement('li');
+                const savedPic = localStorage.getItem(`profilePic_${user}`);
+                const profileLetter = getProfileLetter(user);
+                const profileColor = getRandomColor();
+                const isBlocked = isUserBlocked(user);
+                
+                li.innerHTML = `
+                    <div class="user-profile ${isBlocked ? 'blocked' : ''}">
+                        <div class="profile-pic" style="background: ${profileColor}">
+                            ${savedPic ? `<img src="${savedPic}" alt="Profile Picture">` : profileLetter}
+                        </div>
+                        <span class="user-name">${user}</span>
+                        ${isBlocked ? '<span class="blocked-badge">Blocked</span>' : ''}
+                    </div>
+                `;
+                
+                // Add double-click to block
+                li.ondblclick = (e) => {
+                    e.preventDefault();
+                    if (!isBlocked) {
+                        blockUser(user);
+                    } else {
+                        unblockUser(user);
+                    }
+                };
+                
+                // Add right-click event
+                li.oncontextmenu = (e) => showContextMenu(e, user, `${user.toLowerCase()}@example.com`);
+                
+                // Add left-click for private chat
+                li.onclick = () => {
+                    if (!isBlocked) {
+                        const input = document.getElementById('messageInput');
+                        input.value = `@${user} `;
+                        input.focus();
+                    }
+                };
+                
+                userList.appendChild(li);
+            });
+        }
+
+        // Toggle settings panel
+        function toggleSettings() {
+            const settingsPanel = document.getElementById('settingsPanel');
+            const chatContainer = document.querySelector('.chat-container');
+            
+            if (settingsPanel.classList.contains('active')) {
+                settingsPanel.classList.remove('active');
+                chatContainer.classList.remove('settings-open');
+                // Add a small delay before hiding to allow the animation to complete
+                setTimeout(() => {
+                    settingsPanel.style.visibility = 'hidden';
+                }, 300);
+            } else {
+                settingsPanel.style.visibility = 'visible';
+                settingsPanel.classList.add('active');
+                chatContainer.classList.add('settings-open');
+            }
+        }
+
+        // Close settings when clicking outside
+        document.addEventListener('click', (event) => {
+            const settingsPanel = document.getElementById('settingsPanel');
+            const settingsButton = document.querySelector('.settings-button');
+            const chatContainer = document.querySelector('.chat-container');
+            
+            if (settingsPanel.classList.contains('active') && 
+                !settingsPanel.contains(event.target) && 
+                !settingsButton.contains(event.target)) {
+                settingsPanel.classList.remove('active');
+                chatContainer.classList.remove('settings-open');
+                setTimeout(() => {
+                    settingsPanel.style.visibility = 'hidden';
+                }, 300);
+            }
+        });
+
+        // Update message sound setting
+        function updateMessageSound() {
+            const soundSetting = document.getElementById('messageSound').value;
+            localStorage.setItem('messageSound', soundSetting);
+            
+            // Test sound when enabling
+            if (soundSetting === 'on') {
+                messageSound.currentTime = 0;
+                messageSound.play().catch(error => {
+                    console.log('Sound test failed:', error);
+                });
+            }
+        }
+
+        // Update message preview setting
+        function updateMessagePreview() {
+            const previewSetting = document.getElementById('messagePreview').value;
+            localStorage.setItem('messagePreview', previewSetting);
+        }
+
+        // Update theme
+        function updateTheme() {
+            const theme = document.getElementById('themeSelect').value;
+            localStorage.setItem('theme', theme);
+            applyTheme(theme);
+        }
+
+        // Apply theme
+        function applyTheme(theme) {
+            document.body.className = theme;
+        }
+
+        // Update font size
+        function updateFontSize() {
+            const size = document.getElementById('fontSize').value;
+            localStorage.setItem('fontSize', size);
+            document.body.style.fontSize = size === 'small' ? '14px' : size === 'medium' ? '16px' : '18px';
+        }
+
+        // Load settings
+        function loadSettings() {
+            // Load message sound setting
+            const soundSetting = localStorage.getItem('messageSound') || 'on';
+            document.getElementById('messageSound').value = soundSetting;
+            
+            // Test sound if enabled
+            if (soundSetting === 'on') {
+                messageSound.currentTime = 0;
+                messageSound.play().catch(error => {
+                    console.log('Sound test failed:', error);
+                });
+            }
+
+            // Load message preview setting
+            const previewSetting = localStorage.getItem('messagePreview') || 'on';
+            document.getElementById('messagePreview').value = previewSetting;
+
+            // Load theme
+            const theme = localStorage.getItem('theme') || 'default';
+            document.getElementById('themeSelect').value = theme;
+            applyTheme(theme);
+
+            // Load font size
+            const fontSize = localStorage.getItem('fontSize') || 'medium';
+            document.getElementById('fontSize').value = fontSize;
+            document.body.style.fontSize = fontSize === 'small' ? '14px' : fontSize === 'medium' ? '16px' : '18px';
+        }
+
+        // Add blocked user
+        function blockUser(user) {
+            if (!blockedUsers.includes(user)) {
+                blockedUsers.push(user);
+                localStorage.setItem('blockedUsers', JSON.stringify(blockedUsers));
+                
+                // Notify the blocked user
+                const blockMessage = {
+                    user: 'System',
+                    text: `${currentUser} has blocked you.`,
+                    timestamp: new Date().toLocaleTimeString(),
+                    isPrivate: true,
+                    recipient: user,
+                    isBlockNotification: true
+                };
+                
+                messages.push(blockMessage);
+                localStorage.setItem('chatMessages', JSON.stringify(messages));
+                
+                // Update UI
+                updateOnlineUsers();
+                showBlockedNotification(user);
+            }
+        }
+
+        // Unblock user
+        function unblockUser(user) {
+            blockedUsers = blockedUsers.filter(u => u !== user);
+            localStorage.setItem('blockedUsers', JSON.stringify(blockedUsers));
+            updateOnlineUsers();
+        }
+
+        // Show blocked notification
+        function showBlockedNotification(user) {
+            const notification = document.createElement('div');
+            notification.className = 'blocked-notification';
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <span>You have blocked ${user}</span>
+                    <button onclick="unblockUser('${user}')">Unblock</button>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Check if user is blocked
+        function isUserBlocked(user) {
+            return blockedUsers.includes(user);
+        }
+
+        // Reset all messages
+        function resetAllMessages() {
+            // Clear messages from localStorage
+            localStorage.removeItem('chatMessages');
+            
+            // Clear messages array
+            messages = [];
+            
+            // Clear messages from the chat display
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = '';
+            
+            // Reset message count
+            lastMessageCount = 0;
+            
+            // Show confirmation
+            const notification = document.createElement('div');
+            notification.className = 'blocked-notification';
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <span>All messages have been reset</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Initialize chat when page loads
+        window.addEventListener('load', initializeChat);
+    </script>
+</body>
+</html>
