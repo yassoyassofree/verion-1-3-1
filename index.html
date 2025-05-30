@@ -6,6 +6,12 @@
 <title>User Management System</title>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
+@keyframes moveBackground {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 50% 100%; }
+    100% { background-position: 0% 0%; }
+}
+
 body {
     display: flex;
     flex-direction: column;
@@ -13,56 +19,62 @@ body {
     justify-content: center;
     min-height: 100vh;
     margin: 0;
-    background: linear-gradient(to right, #4facfe, #00f2fe);
+    background: linear-gradient(45deg, #063258, #1c2f30, #063258, #1c2f30);
+    background-size: 400% 400%;
+    animation: moveBackground 15s ease infinite;
     font-family: 'Arial', sans-serif;
     color: #fff;
     text-align: center;
 }
 
+/* Container for login and register forms */
 .container {
-    background-color: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #00ff00;
     border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    padding: 30px;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
     width: 100%;
     max-width: 400px;
+    backdrop-filter: blur(10px);
+    display: none; /* We'll toggle display via JS */
 }
 
-.form-container {
-    display: none;
-    width: 100%;
-    max-width: 400px;
-}
+/* Show only one container at a time */
+#login-container { display: block; }
+#register-container { display: none; }
 
 input {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     margin: 10px 0;
-    border: none;
+    border: 1px solid #00ff00;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
     border-radius: 5px;
-    background-color: #fff;
-    color: #333;
+    font-size: 16px;
 }
 
 button {
     width: 100%;
-    padding: 10px;
-    margin: 5px 0;
+    padding: 12px;
+    margin: 10px 0;
     border: none;
+    background: #00ff00;
+    color: #000;
     border-radius: 5px;
-    background-color: #4facfe;
-    color: white;
+    font-size: 16px;
     cursor: pointer;
+    transition: background 0.3s;
 }
 
 button:hover {
-    background-color: #00f2fe;
+    background: #00cc00;
 }
 
 button.secondary {
     background-color: #666;
 }
-
 button.secondary:hover {
     background-color: #888;
 }
@@ -144,12 +156,22 @@ h1, h2 {
 }
 .video-container iframe {
     width: 100%;
-    height: 100%;
+    height: 315px;
     border-radius: 10px;
+}
+.video-overlay {
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
 }
 </style>
 </head>
 <body>
+
 <!-- Login Form -->
 <div class="container" id="login-container">
     <h2>Login</h2>
@@ -157,21 +179,21 @@ h1, h2 {
         <input type="text" id="username" placeholder="Username" autocomplete="username" required>
         <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
         <button type="submit">Login</button>
-        <button type="button" id="show-register-btn" class="secondary" onclick="showRegisterForm()">Create Account</button>
     </form>
+    <button id="show-register-btn" class="secondary">Register</button>
 </div>
 
 <!-- Registration Form -->
-<div class="form-container" id="register-container">
-    <h2>Create Account</h2>
+<div class="container" id="register-container">
+    <h2>Register</h2>
     <form id="registerForm" onsubmit="return registerUser();">
-        <input type="text" id="reg-username" placeholder="Username" autocomplete="off" required>
-        <input type="password" id="reg-password" placeholder="Password" autocomplete="new-password" required>
-        <input type="password" id="reg-confirm-password" placeholder="Confirm Password" autocomplete="new-password" required>
-        <input type="email" id="reg-email" placeholder="Email" autocomplete="email" required>
-        <button type="submit">Create Account</button>
-        <button type="button" class="secondary" onclick="showLoginForm();">Back to Login</button>
+        <input type="text" id="reg-username" placeholder="Username" required>
+        <input type="email" id="reg-email" placeholder="Email" required>
+        <input type="password" id="reg-password" placeholder="Password" required>
+        <input type="password" id="reg-confirm-password" placeholder="Confirm Password" required>
+        <button type="submit">Register</button>
     </form>
+    <button id="show-login-btn" class="secondary">Back to Login</button>
 </div>
 
 <!-- Scripts -->
@@ -239,53 +261,56 @@ function showRegisterForm() {
 // Initialize on load
 window.addEventListener('DOMContentLoaded', () => {
     loadUsers();
-    // Default show login
+    // Show login form by default
     showLoginForm();
-});
 
-// Toggle display on startup
-document.getElementById('show-register-btn').onclick = showRegisterForm;
+    // Attach button events
+    document.getElementById('show-register-btn').onclick = showRegisterForm;
+    document.getElementById('show-login-btn').onclick = showLoginForm;
 
-// Keyboard shortcuts
-window.addEventListener('keydown', (event) => {
-    if (event.ctrlKey && event.key === '=') {
-        event.preventDefault();
-        checkPendingApprovals();
-    } else if (event.ctrlKey && event.key.toLowerCase() === 'b') {
-        event.preventDefault();
-        window.location.href = 'https://classroom.google.com/';
-    } else if (event.ctrlKey && event.key === '\\') {
-        event.preventDefault();
-        const currentUser = localStorage.getItem('currentUser');
-        if (currentUser) {
-            const user = users.find(u => u.name === currentUser);
-            if (user && user.role === 'admin') {
-                window.location.href = 'admin.html';
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (event) => {
+        if (event.ctrlKey && event.key === '=') {
+            event.preventDefault();
+            checkPendingApprovals();
+        } else if (event.ctrlKey && event.key.toLowerCase() === 'b') {
+            event.preventDefault();
+            window.location.href = 'https://classroom.google.com/';
+        } else if (event.ctrlKey && event.key === '\\') {
+            event.preventDefault();
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                const user = users.find(u => u.name === currentUser);
+                if (user && user.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    alert('Access denied. Only administrators can access the admin panel.');
+                }
             } else {
-                alert('Access denied. Only administrators can access the admin panel.');
+                alert('Please login first to access the admin panel.');
             }
-        } else {
-            alert('Please login first to access the admin panel.');
-        }
-    } else if (event.ctrlKey && event.key === 'Enter') {
-        event.preventDefault();
-        // Show video overlay
-        showVideoOverlay();
-        // After login, redirect to welcome page if active
-        const currentUser = localStorage.getItem('currentUser');
-        if (currentUser) {
-            const user = users.find(u => u.name === currentUser);
-            if (user && user.status === 'active') {
-                window.location.href = 'welcome.html';
+        } else if (event.ctrlKey && event.key === 'Enter') {
+            event.preventDefault();
+            // Show video overlay
+            showVideoOverlay();
+
+            // After login, redirect to welcome if active
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                const user = users.find(u => u.name === currentUser);
+                if (user && user.status === 'active') {
+                    window.location.href = 'welcome.html';
+                } else {
+                    alert('Please login first or wait for account approval.');
+                }
             } else {
                 alert('Please login first or wait for account approval.');
             }
-        } else {
-            alert('Please login first or wait for account approval.');
         }
-    }
+    });
 });
 
+// Show video overlay
 function showVideoOverlay() {
     const overlay = document.createElement('div');
     overlay.className = 'video-overlay';
@@ -330,13 +355,13 @@ function checkPendingApprovals() {
             </div>
         `;
         document.body.appendChild(modal);
-        const tbody = modal.querySelector('#pending-users-tbody');
+        const tbody = document.getElementById('pending-users-tbody');
         pendingUsers.forEach(user => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${user.name}</td>
-                <td>${user.email}</td>
-                <td>${new Date(user.registrationDate).toLocaleString()}</td>
+                <td>${user.email || 'N/A'}</td>
+                <td>${user.registrationDate ? new Date(user.registrationDate).toLocaleString() : 'N/A'}</td>
                 <td>
                     <button onclick="approveUser('${user.id}')">Approve</button>
                     <button onclick="rejectUser('${user.id}')">Reject</button>
@@ -375,9 +400,9 @@ function rejectUser(userId) {
 // Registration
 async function registerUser() {
     const username = document.getElementById('reg-username').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value.trim();
     const confirmPassword = document.getElementById('reg-confirm-password').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
 
     if (!username || !password || !confirmPassword || !email) {
         alert("Please fill in all fields.");
@@ -467,10 +492,10 @@ async function registerUser() {
 
     alert("Registration successful! Your account is pending approval.\n\nYour account information has been saved for future reference.");
     showLoginForm();
-    return false;
+    return false; // Prevent form submission
 }
 
-// Login
+// Login function
 function login(event) {
     event.preventDefault();
     const username = document.getElementById('username').value.trim();
@@ -508,8 +533,6 @@ function login(event) {
     window.location.href = 'welcome.html';
     return true;
 }
-
-// On DOM loaded
 </script>
 </body>
 </html>
